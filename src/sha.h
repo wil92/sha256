@@ -10,6 +10,11 @@
 
 class Sha2 {
 public:
+	/**
+	 * Encodes a string into its SHA-256 hash.
+	 * @param text {string} input string
+	 * @return {string} SHA-256 hash as hex string
+	 */
 	std::string encodeHash(const std::string &text) {
 		uli textBytes[text.length()];
 		for (int i = 0; i < text.length(); i++) {
@@ -18,6 +23,11 @@ public:
 		return encodeHash(textBytes, text.length());
 	}
 
+	/**
+	 * Encodes a hex string (e.g. "abcdef0123456789") into its SHA-256 hash.
+	 * @param hexText {string} input hex string
+	 * @return {string} SHA-256 hash as hex string
+	 */
 	std::string encodeHexHash(const std::string &hexText) {
 		uli textBytes[hexText.length() / 2];
 		for (int i = 0; i * 2 < hexText.length(); i++) {
@@ -26,7 +36,14 @@ public:
 		return encodeHash(textBytes, hexText.length() / 2);
 	}
 
-	std::string encodeHash(const uli *text, const size_t length) {
+	/**
+	 * Encodes a byte array into its SHA-256 hash.
+	 * @param msg {unsigned long int} input byte array
+	 * @param length {size_t} length of the byte array
+	 * @return {string} SHA-256 hash as hex string
+	 */
+	std::string encodeHash(const uli *msg, const size_t length) {
+		// SHA-256 constants. First 32 bits of the fractional parts of the cube roots of the first 64 primes 2..311
 		const uli fixedValues[64] = {
 			0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
 			0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
@@ -42,8 +59,9 @@ public:
 		const int numberOfSubBlocks = BLOCK_SIZE * ((l + 65) / BLOCK_SIZE + 1) / 32;
 		uli blocks[numberOfSubBlocks];
 		uli w[64];
-		createBlocks(text, l, blocks, numberOfSubBlocks);
+		createBlocks(msg, l, blocks, numberOfSubBlocks);
 
+		// initial hash values. First 32 bits of the fractional parts of the square roots of the first 8 primes 2..19
 		uli h1 = 0x6a09e667, h2 = 0xbb67ae85, h3 = 0x3c6ef372, h4 = 0xa54ff53a,
 				h5 = 0x510e527f, h6 = 0x9b05688c, h7 = 0x1f83d9ab, h8 = 0x5be0cd19;
 		for (int i = 0, size = numberOfSubBlocks / NUMBER_OF_SUBBLOCKS; i < size; i++) {
@@ -82,6 +100,8 @@ public:
 		}
 		return hash;
 	}
+
+private:
 
 	inline char toHexChar(const uli i) {
 		return (i < 10) ? '0' + i : 'a' + (i - 10);
