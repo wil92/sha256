@@ -5,7 +5,8 @@
 #include <string>
 
 #define uli unsigned long int
-#define BLOCK_SIZE 16
+#define NUMBER_OF_SUBBLOCKS 16
+#define BLOCK_SIZE 512
 
 class Sha2 {
 public:
@@ -38,19 +39,14 @@ public:
 		};
 
 		const int l = static_cast<int>(length) * 8;
-		int block_size = 0, k;
-		do {
-			block_size += 512;
-			k = block_size - (l + 64 + 1);
-		} while (k < 0);
-		const int numberOfSubBlocks = (l + 1 + k + 64) / 32;
+		const int numberOfSubBlocks = BLOCK_SIZE * ((l + 65) / BLOCK_SIZE + 1) / 32;
 		uli blocks[numberOfSubBlocks];
 		uli w[64];
 		createBlocks(text, l, blocks, numberOfSubBlocks);
 
 		uli h1 = 0x6a09e667, h2 = 0xbb67ae85, h3 = 0x3c6ef372, h4 = 0xa54ff53a,
 				h5 = 0x510e527f, h6 = 0x9b05688c, h7 = 0x1f83d9ab, h8 = 0x5be0cd19;
-		for (int i = 0, size = numberOfSubBlocks / BLOCK_SIZE; i < size; i++) {
+		for (int i = 0, size = numberOfSubBlocks / NUMBER_OF_SUBBLOCKS; i < size; i++) {
 			uli a = h1, b = h2, c = h3, d = h4, e = h5, f = h6, g = h7, h = h8;
 
 			precalculateW(w, i, blocks);
@@ -81,7 +77,7 @@ public:
 		std::string hash;
 		for (const uli h: {h1, h2, h3, h4, h5, h6, h7, h8}) {
 			for (int i = 0; i < 8; i++) {
-				hash += toHexChar((h >> (28 - i * 4)) & 0xf);
+				hash.push_back(toHexChar((h >> (28 - i * 4)) & 0xf));
 			}
 		}
 		return hash;
@@ -93,8 +89,8 @@ public:
 
 	inline void precalculateW(uli *w, const int i, const uli *blocks) {
 		for (int j = 0; j < 64; j++) {
-			if (j < 16) {
-				w[j] = blocks[i * BLOCK_SIZE + j];
+			if (j < NUMBER_OF_SUBBLOCKS) {
+				w[j] = blocks[i * NUMBER_OF_SUBBLOCKS + j];
 			} else {
 				w[j] = (smallSigma1(w[j - 2]) + w[j - 7]
 				        + smallSigma0(w[j - 15]) + w[j - 16]) & 0xffffffff;
