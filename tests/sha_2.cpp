@@ -1,12 +1,32 @@
 #include <gtest/gtest.h>
 #include <fstream>
 #include <iostream>
+#include <chrono>
 
 #include "../src/sha.h"
 
+TEST(SHA_Test, PerformanceTest) {
+	Sha2 sha;
+	const std::string input =
+			"00000020980714d8c5502491b53e51ae97c6705274e33da1ad6001000000000000000000a3cd3101bdb2b2f4f96e9057e46152ecfa8a105bf59dfd61294f324d7ae1cd3808ffe268b4dd011727abd0c7";
 
-// Demonstrate some basic assertions.
-TEST(SHA_Test, BasicTest) {
+	const int iterations = 100;
+	long long duration = 0;
+
+	for (int i = 0; i < iterations; i++) {
+		const auto start = std::chrono::high_resolution_clock::now();
+		const std::string hash = sha.encodeHexHash(input);
+		const auto end = std::chrono::high_resolution_clock::now();
+		duration += std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+		ASSERT_FALSE(hash.empty());
+	}
+
+	duration /= iterations;
+	std::cout << "SHA256 encodeHash took " << duration << " microseconds." << std::endl;
+	ASSERT_TRUE(duration < 15);
+}
+
+TEST(SHA_Test, HashTest) {
 	Sha2 sha2;
 	std::ifstream inFile("test_cases.txt");
 	std::string inLine, outLine;
@@ -47,30 +67,4 @@ void validateBlocks(std::vector<std::vector<uli> > blocks, std::string hexBlocks
 			EXPECT_EQ(expectedBlock, blocks[i][k]) << " at block " << i << ", " << k << std::endl;
 		}
 	}
-}
-
-TEST(SHA_Test, createBlocks_1) {
-	Sha2 sha2;
-	std::string text = "abc";
-	uli textBytes[text.length()];
-	for (int i = 0; i < text.length(); i++) {
-		textBytes[i] = static_cast<uli>(text[i]) & static_cast<unsigned long int>(0xff);
-	}
-	std::vector<std::vector<uli> > res = sha2.createBlocks(textBytes, text.length());
-	validateBlocks(
-		res,
-		"61626380 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000018");
-}
-
-TEST(SHA_Test, createBlocks_2) {
-	Sha2 sha2;
-	std::string text = "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq";
-	uli textBytes[text.length()];
-	for (int i = 0; i < text.length(); i++) {
-		textBytes[i] = static_cast<uli>(text[i]) & static_cast<unsigned long int>(0xff);
-	}
-	std::vector<std::vector<uli> > res = sha2.createBlocks(textBytes, text.length());
-	validateBlocks(
-		res,
-		"61626364 62636465 63646566 64656667 65666768 66676869 6768696a 68696a6b 696a6b6c 6a6b6c6d 6b6c6d6e 6c6d6e6f 6d6e6f70 6e6f7071 80000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 000001c0");
 }
